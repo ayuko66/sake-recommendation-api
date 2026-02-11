@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 class TasteProfile(BaseModel):
     sweet_dry: float
@@ -30,3 +30,9 @@ class SakeListResponse(BaseModel):
 
 class SakeSearchResponse(BaseModel):
     items: List[SakeListItem]
+
+class VectorStatusResponse(BaseModel):
+    total_sakes: int
+    total_vectors: int
+    pending_count: int
+    last_computed_at: Optional[str] = None

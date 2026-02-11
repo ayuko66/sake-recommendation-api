@@ -5,7 +5,8 @@ from .models import (
     SakeListResponse, 
     SakeDetail, 
     SakeSearchResponse,
-    SakeListItem
+    SakeListItem,
+    VectorStatusResponse
 )
 
 app = FastAPI(title="Sake Recommendation API")
@@ -13,6 +14,10 @@ app = FastAPI(title="Sake Recommendation API")
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+@app.get("/vectors/status", response_model=VectorStatusResponse)
+def get_vector_status():
+    return db.get_vector_status()
 
 @app.get("/sakes", response_model=SakeListResponse)
 def list_sakes(
