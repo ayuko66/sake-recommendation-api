@@ -84,7 +84,7 @@ MVPでは以下 **4軸** を扱う。
 {
   "input_text": "白身魚とハーブ系の料理に合う、すっきりフルーティな日本酒",
   "top_k": 5,
-  "mode": "dict",
+  "mode": "embedding",
   "query": {
     "taste_vector": [0.1, -0.6, 1.0, 0.6]
   },
@@ -190,4 +190,5 @@ APIの挙動を以下の環境変数で制御可能です。
 | --- | --- | --- |
 | `SAKE_DB_PATH` | SQLiteデータベースファイルのパス | `var/sake.db` |
 | `USE_EMBEDDING` | 埋め込みベクトル検索を使用するか (0: OFF, 1: ON) | `0` |
-| `EMBED_PROVIDER` | ベクトル生成プロバイダ (`openai`, `sbert` 等) | `openai` |
+| `GEMINI_API_KEY` | Google Gemini API Key (Embedding用) | - |
+| `EMBED_PROVIDER` | ベクトル生成プロバイダ (現在は `gemini` 固定) | `gemini` |

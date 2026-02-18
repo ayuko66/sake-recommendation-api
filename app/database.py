@@ -109,7 +109,7 @@ def get_all_sakes_with_vectors() -> List[Dict[str, Any]]:
     sql = """
         SELECT 
             m.sake_id, m.name, m.brewery, m.prefecture,
-            v.taste_vector
+            v.taste_vector, v.embedding
         FROM sake_master m
         JOIN sake_vectors v ON m.sake_id = v.sake_id
     """
@@ -124,5 +124,17 @@ def get_all_sakes_with_vectors() -> List[Dict[str, Any]]:
                 d["vector"] = json.loads(d["taste_vector"])
             else:
                 d["vector"] = [0.0, 0.0, 0.0, 0.0]
+            
+            # Embeddingの取得
+            if d.get("embedding"):
+                try:
+                    # BLOB/TEXTのどちらでもJSONデコードを試みる
+                    d["embedding"] = json.loads(d["embedding"])
+                except Exception as e:
+                    print(f"Error parsing embedding for sake_id={d['sake_id']}: {e}")
+                    d["embedding"] = None
+            else:
+                d["embedding"] = None
+
             results.append(d)
         return results

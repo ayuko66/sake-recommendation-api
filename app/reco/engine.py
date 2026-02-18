@@ -2,7 +2,9 @@ import math
 from typing import List, Dict, Any, Optional
 from .. import database as db
 from ..models import RecommendationRequest, RecommendationResponse, RecommendationItem, RecommendationQuery
+from ..config import settings
 from .taste_v1 import estimate_taste_vector
+from .embedding import EmbeddingClient
 
 def _generate_reason(cand: Dict[str, Any], q_hits: Dict[str, List[str]], s_vector: List[float]) -> str:
     """
@@ -67,6 +69,18 @@ def recommend(request: RecommendationRequest) -> RecommendationResponse:
     # 1. 入力テキストのベクトル化
     q_vector, _, q_hits = estimate_taste_vector(request.text)
     
+    q_embedding = None
+    mode = "dict"
+    if settings.USE_EMBEDDING == 1:
+        try:
+            client = EmbeddingClient()
+            q_embedding = client.get_query_embedding(request.text)
+            mode = "embedding"
+        except Exception as e:
+            print(f"Failed to get embedding: {e}")
+            # フォールバック: 従来モード
+            pass
+    
     # 2. 候補データの取得
     candidates = db.get_all_sakes_with_vectors()
     
@@ -96,12 +110,40 @@ def recommend(request: RecommendationRequest) -> RecommendationResponse:
     for cand in filtered_candidates:
         s_vector = cand["vector"]
         
-        # L2距離 (Euclidean distance)
-        # q_vector, s_vector は共に float のリスト
-        dist = math.sqrt(sum((q - s) ** 2 for q, s in zip(q_vector, s_vector)))
-        
-        # スコア化 (距離が0に近いほどスコアは1に近づく)
-        score = 1.0 / (1.0 + dist)
+        if settings.USE_EMBEDDING == 1 and cand.get("embedding"):
+            # Embeddingによる類似度計算 (Cosine Similarity)
+            # q_embedding はループの外で計算すべきだが、構造上ここで参照できるようにする
+            # recommend関数の冒頭で計算しておく
+            if q_embedding is None:
+                 # フォールバック (あるいはエラー)
+                 score = 0
+                 dist = 1.0 # 適当な大文字
+            else:
+                s_embedding = cand["embedding"]
+                # Cosine Similarity: dot(A, B) / (norm(A) * norm(B))
+                # Gemini Embeddingは通常正規化されていると仮定できるが、念のため計算
+                
+                dot_product = sum(a * b for a, b in zip(q_embedding, s_embedding))
+                norm_q = math.sqrt(sum(a * a for a in q_embedding))
+                norm_s = math.sqrt(sum(b * b for b in s_embedding))
+                
+                if norm_q * norm_s == 0:
+                    similarity = 0.0
+                else:
+                    similarity = dot_product / (norm_q * norm_s)
+                
+                # スコアは類似度そのものを使う (0~1)
+                score = similarity
+                # distanceは便宜上 1 - similarity とする
+                dist = 1.0 - similarity
+
+        else:
+            # 従来ロジック: L2距離 (Euclidean distance)
+            # q_vector, s_vector は共に float のリスト
+            dist = math.sqrt(sum((q - s) ** 2 for q, s in zip(q_vector, s_vector)))
+            
+            # スコア化 (距離が0に近いほどスコアは1に近づく)
+            score = 1.0 / (1.0 + dist)
         
         # 理由生成
         reason_text = _generate_reason(cand, q_hits, s_vector)
@@ -129,7 +171,7 @@ def recommend(request: RecommendationRequest) -> RecommendationResponse:
     return RecommendationResponse(
         input_text=request.text,
         top_k=top_k,
-        mode="dict",
+        mode=mode,
         query=RecommendationQuery(taste_vector=q_vector),
         recommendations=result_items
     )
