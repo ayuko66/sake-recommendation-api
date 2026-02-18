@@ -65,6 +65,35 @@ Docker環境も用意してありますので、必要に応じてご利用く�
    
    APIドキュメント（Swagger UI）は [http://localhost:8000/docs](http://localhost:8000/docs) で確認できます。
 
+### API利用例
+
+#### 1. レコメンド取得
+好みの日本酒を探します。
+
+```bash
+curl -X 'POST' \
+  'http://localhost:8000/recommend' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "text": "魚料理に合う、すっきりした辛口",
+  "top_k": 3
+}'
+```
+
+#### 2. 銘柄検索
+銘柄名や蔵元名で検索します。
+
+```bash
+curl 'http://localhost:8000/search?q=八海山'
+```
+
+#### 3. 銘柄一覧取得
+登録されている銘柄を一覧で取得します。
+
+```bash
+curl 'http://localhost:8000/sakes?limit=10'
+```
+
 ### Docker での実行（Optional）
 
 1. **ビルド & 起動**

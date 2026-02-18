@@ -4,6 +4,7 @@ from .db.core import get_conn
 from .models import SakeListItem, SakeDetail, TasteProfile
 from .config import settings
 
+# fruityの数値からカテゴリに変換するヘルパー関数
 def _map_fruity(val: float) -> str:
     if val >= 0.7:
         return "high"
@@ -12,11 +13,13 @@ def _map_fruity(val: float) -> str:
     else:
         return "low"
 
+# 全銘柄数を取得
 def get_total_sakes() -> int:
     with get_conn() as conn:
         cursor = conn.execute("SELECT COUNT(*) FROM sake_master")
         return cursor.fetchone()[0]
 
+# 銘柄一覧を取得
 def get_sakes(page: int, limit: int) -> List[SakeListItem]:
     offset = (page - 1) * limit
     with get_conn() as conn:
@@ -27,6 +30,7 @@ def get_sakes(page: int, limit: int) -> List[SakeListItem]:
         rows = cursor.fetchall()
         return [SakeListItem(**dict(row)) for row in rows]
 
+# IDを指定して銘柄詳細を取得
 def get_sake_by_id(sake_id: int) -> Optional[SakeDetail]:
     with get_conn() as conn:
         # 銘柄マスタ取得
@@ -96,3 +100,29 @@ def get_vector_status() -> Dict[str, Any]:
             "pending_count": max(0, total_sakes - total_vectors),
             "last_computed_at": last_computed
         }
+
+def get_all_sakes_with_vectors() -> List[Dict[str, Any]]:
+    """
+    レコメンデーション用に全銘柄とベクトルを取得する
+    JOIN sake_master and sake_vectors
+    """
+    sql = """
+        SELECT 
+            m.sake_id, m.name, m.brewery, m.prefecture,
+            v.taste_vector
+        FROM sake_master m
+        JOIN sake_vectors v ON m.sake_id = v.sake_id
+    """
+    with get_conn() as conn:
+        cursor = conn.execute(sql)
+        rows = cursor.fetchall()
+        
+        results = []
+        for row in rows:
+            d = dict(row)
+            if d["taste_vector"]:
+                d["vector"] = json.loads(d["taste_vector"])
+            else:
+                d["vector"] = [0.0, 0.0, 0.0, 0.0]
+            results.append(d)
+        return results

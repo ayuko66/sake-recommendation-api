@@ -113,12 +113,13 @@
 - fruity: 0.0 / 0.5 / 1.0 (low/mid/high)
 - modern: -1.0(クラシック) ～ 1.0(モダン)
 
-### 3.2 生成方式(どちらでもMVP成立)
-#### 方式A: 辞書スコアリング(堅い/説明しやすい)
+### 3.2 生成方式
+
+#### 方式A: 辞書スコアリング (v1 - MVP)
 - テキスト中の語彙をカウントして軸スコア化
 - 例: modern_words と classic_words の差を正規化して modern を算出
 
-#### 方式B: Embedding + 軸射影(今っぽい/拡張しやすい)
+#### 方式B: Embedding + 軸射影 (v2)
 - 酒テキストの embedding と、軸を表すプロンプト embedding で内積/類似度
 - 例: "クラシックな熟成感" や "白ワインのような香り" を軸として射影
 
@@ -170,7 +171,12 @@ POST /recommend
 ```json
 {
   "text": "白ワインみたいな日本酒が好き",
-  "top_k": 5
+  "top_k": 5,
+  "filters": {
+    "prefecture": ["新潟県", "山形県"],
+    "exclude_brewery": ["○○酒造"]
+  },
+  "debug": false
 }
 ```
 
@@ -178,17 +184,20 @@ POST /recommend
 ```json
 {
   "input_text": "白ワインみたいな日本酒が好き",
+  "top_k": 5,
+  "mode": "dict",
+  "query": {
+    "taste_vector": [0.2, -0.4, 1.0, 0.6]
+  },
   "recommendations": [
     {
       "sake_id": 1,
       "name": "〇〇 純米吟醸",
+      "brewery": "蔵元名",
+      "prefecture": "都道府県",
       "score": 0.82,
-      "taste_profile": {
-        "sweet_dry": 0.2,
-        "body": -0.4,
-        "fruity": "high",
-        "style": 0.6
-      },
+      "distance": 0.22,
+      "taste_vector": [0.2, -0.4, 1.0, 0.6],
       "reason": "フルーティでモダン寄りの香味表現が入力に近い"
     }
   ]

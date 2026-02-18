@@ -11,23 +11,35 @@ def estimate_taste_vector(text: str) -> Tuple[List[float], Dict[str, float]]:
     テキストから日本酒の味ベクトル(4次元)とスコア明細を推定する。
     
     Returns:
-        (vector, scores)
+    Returns:
+        (vector, scores, hits)
         - vector: [sweet_dry, body, fruity, style]
         - scores: 各項目の素点辞書
+        - hits: 各項目のヒット単語リスト辞書
     """
     if not text:
-        return [0.0, 0.0, 0.0, 0.0], {}
+        return [0.0, 0.0, 0.0, 0.0], {}, {}
 
-    # 各要素のスコアを計算 (最大のスコアを採用)
-    scores = {
-        "sweet": max([v for k, v in SWEET_WORDS.items() if k in text] + [0.0]),
-        "dry": max([v for k, v in DRY_WORDS.items() if k in text] + [0.0]),
-        "light": max([v for k, v in LIGHT_WORDS.items() if k in text] + [0.0]),
-        "rich": max([v for k, v in RICH_WORDS.items() if k in text] + [0.0]),
-        "fruity": max([v for k, v in FRUITY_WORDS.items() if k in text] + [0.0]),
-        "modern": max([v for k, v in MODERN_WORDS.items() if k in text] + [0.0]),
-        "classic": max([v for k, v in CLASSIC_WORDS.items() if k in text] + [0.0]),
-    }
+    scores = {}
+    hits = {}
+
+    def _calc(category: str, lexicon: Dict[str, float]):
+        matched = {k: v for k, v in lexicon.items() if k in text}
+        if matched:
+            scores[category] = max(matched.values())
+            # マッチした単語を全て記録 (理由生成で使う)
+            hits[category] = list(matched.keys())
+        else:
+            scores[category] = 0.0
+            hits[category] = []
+
+    _calc("sweet", SWEET_WORDS)
+    _calc("dry", DRY_WORDS)
+    _calc("light", LIGHT_WORDS)
+    _calc("rich", RICH_WORDS)
+    _calc("fruity", FRUITY_WORDS)
+    _calc("modern", MODERN_WORDS)
+    _calc("classic", CLASSIC_WORDS)
 
     # 4次元ベクトルの組み立て
     # 1. 甘辛 
@@ -55,4 +67,4 @@ def estimate_taste_vector(text: str) -> Tuple[List[float], Dict[str, float]]:
         max(-1.0, min(1.0, style))
     ]
     
-    return vector, scores
+    return vector, scores, hits

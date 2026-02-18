@@ -82,22 +82,26 @@ MVPでは以下 **4軸** を扱う。
 
 ```json
 {
-  "input_text": "白身魚とハーブ系の料理に合う日本酒",
+  "input_text": "白身魚とハーブ系の料理に合う、すっきりフルーティな日本酒",
+  "top_k": 5,
+  "mode": "dict",
+  "query": {
+    "taste_vector": [0.1, -0.6, 1.0, 0.6]
+  },
   "recommendations": [
     {
-      "sake_id": 101,
+      "sake_id": 12,
       "name": "〇〇 純米吟醸",
-      "similarity_score": 0.86,
-      "taste_profile": {
-        "sweet_dry": 0.2,
-        "body": -0.4,
-        "fruity": "high",
-        "style": 0.6
-      },
-      "reason": "軽やかでフルーティな方向性が料理と相性が良いため"
+      "brewery": "△△酒造",
+      "prefecture": "山形",
+      "score": 0.82,
+      "distance": 0.22,
+      "taste_vector": [0.0, -0.5, 1.0, 0.7],
+      "reason": "『すっきり』『吟醸香』に反応。淡麗でフルーティ、モダン寄りの傾向が近い"
     }
   ]
 }
+```
 
 ---
 

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 
 class TasteProfile(BaseModel):
     sweet_dry: float
@@ -30,6 +30,35 @@ class SakeListResponse(BaseModel):
 
 class SakeSearchResponse(BaseModel):
     items: List[SakeListItem]
+
+
+class RecommendationFilters(BaseModel):
+    prefecture: Optional[List[str]] = None
+    exclude_brewery: Optional[List[str]] = None
+
+class RecommendationRequest(BaseModel):
+    text: str
+    top_k: Optional[int] = 5
+    filters: Optional[RecommendationFilters] = None
+    debug: Optional[bool] = False
+
+class RecommendationItem(SakeListItem):
+    score: float
+    distance: float
+    taste_vector: List[float]
+    reason: str
+    debug_info: Optional[Dict[str, Any]] = None
+
+class RecommendationQuery(BaseModel):
+    taste_vector: List[float]
+
+class RecommendationResponse(BaseModel):
+    input_text: str
+    top_k: int
+    mode: str = "dict"
+    query: RecommendationQuery
+    recommendations: List[RecommendationItem]
+
 
 class VectorStatusResponse(BaseModel):
     total_sakes: int

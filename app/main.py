@@ -6,8 +6,11 @@ from .models import (
     SakeDetail, 
     SakeSearchResponse,
     SakeListItem,
-    VectorStatusResponse
+    VectorStatusResponse,
+    RecommendationRequest,
+    RecommendationResponse
 )
+from .reco import engine
 
 app = FastAPI(title="Sake Recommendation API")
 
@@ -47,3 +50,7 @@ def search_sakes(
 ):
     items = db.search_sakes(q, limit)
     return SakeSearchResponse(items=items)
+
+@app.post("/recommend", response_model=RecommendationResponse)
+def recommend_sakes(request: RecommendationRequest):
+    return engine.recommend(request)

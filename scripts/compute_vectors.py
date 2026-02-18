@@ -1,6 +1,10 @@
-# Usage: uv run python scripts/compute_vectors.py
 import json
 import sqlite3
+import sys
+import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
 from app.db.core import get_conn
 from app.reco import estimate_taste_vector
 
@@ -28,7 +32,8 @@ def compute_vectors():
             analysis_text = f"{name} {desc}"
             
             # 2. 味ベクトルを推定 (現在は辞書ベース)
-            vector, _ = estimate_taste_vector(analysis_text)
+            # estimate_taste_vector returns (vector, scores, hits)
+            vector, _, _ = estimate_taste_vector(analysis_text)
             
             # 3. DBを更新 (upsert)
             conn.execute("""
